@@ -143,7 +143,7 @@ def chat():
 def serve_frontend():
     try:
         # Ensure AI.html is in the same directory as app.py or provide the correct path
-        file_path = os.path.join(os.path.dirname(__file__), 'AI.html')
+        file_path = os.path.join(os.path.dirname(__file__), 'Ai.html')
         if not os.path.exists(file_path):
             return jsonify({'error': 'AI.html not found'}), 404
         return send_file(file_path)
@@ -154,3 +154,4 @@ def serve_frontend():
 if __name__ == '__main__':
 
     app.run(debug=True, host='0.0.0.0', port=5000)
+
