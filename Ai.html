@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8"
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cirilla AI</title>
     <style>
@@ -539,7 +539,7 @@
             }
 
             async callChatbotAPI(message) {
-                const API_URL = 'http://localhost:5000/chat'; // Flask backend endpoint
+                const API_URL = '/chat';// Flask backend endpoint
 
                 try {
                     const response = await fetch(API_URL, {
@@ -650,4 +650,5 @@
         }
     </script>
 </body>
+
 </html>
