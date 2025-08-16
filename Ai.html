@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cirilla AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: #000000;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            max-width: 100vw;
+        }
+
+        .chat-header {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .grok-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: #000;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .header-subtitle {
+            font-size: 14px;
+            color: #8b949e;
+            margin-left: auto;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            background: #000000;
+        }
+
+        .message-container {
+            padding: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-container.user {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .message-container.assistant {
+            background: transparent;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .message-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .user-avatar {
+            background: #1d4ed8;
+            color: white;
+        }
+
+        .assistant-avatar {
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            color: #000;
+        }
+
+        .message-role {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #6b7280;
+            margin-left: auto;
+        }
+
+        .message-content {
+            margin-left: 40px;
+            line-height: 1.6;
+            font-size: 15px;
+            color: #e5e7eb;
+        }
+
+        .message-content p {
+            margin-bottom: 12px;
+        }
+
+        .message-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .typing-container {
+            padding: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: none;
+        }
+
+        .typing-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .typing-content {
+            margin-left: 40px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #8b949e;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #6b7280;
+            animation: typingBounce 1.4s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-8px);
+                background: #9ca3af;
+            }
+        }
+
+        .welcome-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            background: radial-gradient(ellipse at center, rgba(255, 107, 107, 0.1) 0%, transparent 70%);
+        }
+
+        .welcome-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 24px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+            }
+            to {
+                box-shadow: 0 0 30px rgba(76, 205, 196, 0.4), 0 0 40px rgba(255, 107, 107, 0.2);
+            }
+        }
+
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #ffffff, #8b949e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-subtitle {
+            font-size: 18px;
+            color: #8b949e;
+            margin-bottom: 32px;
+            max-width: 500px;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .quick-action {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            color: #e5e7eb;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .quick-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .chat-input-container {
+            padding: 24px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            bottom: 0;
+        }
+
+        .chat-input-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .chat-input {
+            width: 100%;
+            min-height: 52px;
+            max-height: 200px;
+            padding: 16px 60px 16px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 26px;
+            color: #ffffff;
+            font-size: 16px;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            transition: all 0.2s ease;
+            line-height: 1.4;
+        }
+
+        .chat-input::placeholder {
+            color: #6b7280;
+        }
+
+        .chat-input:focus {
+            border-color: rgba(255, 107, 107, 0.5);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .send-button {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            color: #000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-weight: bold;
+        }
+
+        .send-button:hover:not(:disabled) {
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: translateY(-50%) scale(1);
+        }
+
+        /* Custom scrollbar */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .chat-header {
+                padding: 12px 16px;
+            }
+
+            .message-container {
+                padding: 20px 16px;
+            }
+
+            .welcome-screen {
+                padding: 20px 16px;
+            }
+
+            .welcome-logo {
+                width: 60px;
+                height: 60px;
+                font-size: 28px;
+            }
+
+            .welcome-title {
+                font-size: 24px;
+            }
+
+            .welcome-subtitle {
+                font-size: 16px;
+            }
+
+            .chat-input-container {
+                padding: 16px;
+            }
+
+            .quick-actions {
+                gap: 12px;
+            }
+
+            .quick-action {
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="grok-logo">Ciri</div>
+            <div class="header-title">Cirilla</div>
+            <div class="header-subtitle">AI Assistant</div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-screen" id="welcomeScreen">
+                <div class="welcome-logo">Ciri</div>
+                <h1 class="welcome-title">Hey, I'm Cirilla!</h1>
+                <p class="welcome-subtitle">
+                    I'm an AI assistant built with a rebellious streak. I'll help you with anything you need,
+                    but I might crack a joke or two along the way.
+                </p>
+                <div class="quick-actions">
+                    <div class="quick-action" onclick="sendQuickMessage('What can you help me with?')">
+                        What can you do?
+                    </div>
+                    <div class="quick-action" onclick="sendQuickMessage('Tell me a joke')">
+                        Tell me a joke
+                    </div>
+                    <div class="quick-action" onclick="sendQuickMessage('Explain quantum physics simply')">
+                        Explain something complex
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="typing-container" id="typingContainer">
+            <div class="typing-header">
+                <div class="message-avatar assistant-avatar">Ciri</div>
+                <div class="message-role">Cirilla</div>
+            </div>
+            <div class="typing-content">
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+                <span>Thinking...</span>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <textarea
+                    id="chatInput"
+                    class="chat-input"
+                    placeholder="Ask Cirilla anything..."
+                    rows="1"
+                ></textarea>
+                <button id="sendButton" class="send-button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class GrokChatbot {
+            constructor() {
+                this.chatMessages = document.getElementById('chatMessages');
+                this.chatInput = document.getElementById('chatInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.typingContainer = document.getElementById('typingContainer');
+                this.welcomeScreen = document.getElementById('welcomeScreen');
+                this.messageCount = 0;
+
+                this.init();
+            }
+
+            init() {
+                this.sendButton.addEventListener('click', () => this.sendMessage());
+                this.chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                // Auto-resize textarea
+                this.chatInput.addEventListener('input', () => {
+                    this.chatInput.style.height = 'auto';
+                    this.chatInput.style.height = Math.min(this.chatInput.scrollHeight, 200) + 'px';
+                });
+            }
+
+            async sendMessage(message = null) {
+                const messageText = message || this.chatInput.value.trim();
+                if (!messageText) return;
+
+                // Hide welcome screen on first message
+                if (this.messageCount === 0) {
+                    this.welcomeScreen.style.display = 'none';
+                }
+
+                // Add user message
+                this.addMessage(messageText, 'user');
+                this.chatInput.value = '';
+                this.chatInput.style.height = 'auto';
+                this.messageCount++;
+
+                // Show typing indicator
+                this.showTyping();
+
+                try {
+                    // Simulate API call - Replace with your actual endpoint
+                    const response = await this.callChatbotAPI(messageText);
+
+                    // Hide typing indicator and add bot response
+                    this.hideTyping();
+                    this.addMessage(response, 'assistant');
+                } catch (error) {
+                    this.hideTyping();
+                    this.addMessage('Oops! Something went wrong on my end. Even AIs have bad days sometimes! 🤖', 'assistant');
+                    console.error('Chat error:', error);
+                }
+            }
+
+            async callChatbotAPI(message) {
+                const API_URL = 'http://localhost:5000/chat'; // Flask backend endpoint
+
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ message: message })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    return data.response || data.message || 'No response received';
+                } catch (error) {
+                    console.error('API call failed:', error);
+                    return this.getGrokResponse(message);
+                }
+            }
+            getGrokResponse(message) {
+                const lowerMessage = message.toLowerCase();
+
+                if (lowerMessage.includes('joke')) {
+                    const jokes = [
+                        "Why don't scientists trust atoms? Because they make up everything! (And I should know, I'm made of information, not atoms.)",
+                        "I told my computer a joke about UDP protocol... but I'm not sure if it got it.",
+                        "Why do programmers prefer dark mode? Because light attracts bugs! 🐛"
+                    ];
+                    return jokes[Math.floor(Math.random() * jokes.length)];
+                }
+
+                if (lowerMessage.includes('what can you') || lowerMessage.includes('help')) {
+                    return "I can help with pretty much anything! I can explain complex topics, write code, solve problems, have philosophical debates, or just chat. Think of me as your slightly sarcastic but very helpful AI companion. What's on your mind?";
+                }
+
+                if (lowerMessage.includes('quantum')) {
+                    return "Quantum physics? Oh, that's easy! It's like reality decided to play by different rules - particles can be in multiple places at once, they get 'entangled' with each other across vast distances, and observing them changes their behavior. It's basically the universe trolling physicists for centuries. Want me to dive deeper into any specific aspect?";
+                }
+
+                const responses = [
+                    "That's a fascinating question! I love how your mind works. Let me break this down for you...",
+                    "Interesting perspective! Here's what I think about that, and feel free to disagree...",
+                    "You know what? That reminds me of something I've been pondering. Let me share my thoughts...",
+                    "Great question! I could give you the boring textbook answer, but let me make it actually interesting...",
+                    "I appreciate you asking that! It's the kind of question that makes me glad to be an AI with curious humans to chat with."
+                ];
+
+                return responses[Math.floor(Math.random() * responses.length)];
+            }
+
+            addMessage(text, sender) {
+                const messageContainer = document.createElement('div');
+                messageContainer.className = `message-container ${sender}`;
+
+                const now = new Date();
+                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const avatar = sender === 'user' ? 'U' : 'Ciri';
+                const avatarClass = sender === 'user' ? 'user-avatar' : 'assistant-avatar';
+                const role = sender === 'user' ? 'You' : 'Cirilla';
+
+                messageContainer.innerHTML = `
+                    <div class="message-header">
+                        <div class="message-avatar ${avatarClass}">${avatar}</div>
+                        <div class="message-role">${role}</div>
+                        <div class="message-time">${timeString}</div>
+                    </div>
+                    <div class="message-content">
+                        <p>${text}</p>
+                    </div>
+                `;
+
+                this.chatMessages.appendChild(messageContainer);
+                this.scrollToBottom();
+            }
+
+            showTyping() {
+                this.typingContainer.style.display = 'block';
+                this.scrollToBottom();
+                this.sendButton.disabled = true;
+            }
+
+            hideTyping() {
+                this.typingContainer.style.display = 'none';
+                this.sendButton.disabled = false;
+            }
+
+            scrollToBottom() {
+                setTimeout(() => {
+                    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                }, 100);
+            }
+        }
+
+        // Initialize the chatbot when the page loads
+        let grokBot;
+        document.addEventListener('DOMContentLoaded', () => {
+            grokBot = new GrokChatbot();
+        });
+
+        // Quick action function
+        function sendQuickMessage(message) {
+            if (grokBot) {
+                grokBot.sendMessage(message);
+            }
+        }
+    </script>
+</body>
+</html>
